@@ -42,7 +42,25 @@ WinJS.Utilities.markSupportedForProcessing(window.templateProcessor);
 </div>
 ```
 
-[Live demo, including all the incidental supporting code](https://jsbin.com/kuyemit/edit?html,output)
+[Live demo, including all supporting code](https://jsbin.com/kuyemit/edit?html,output)
+
+### With custom placeholders while data loads
+
+```js
+window.templateProcessor = itemPromise => {
+  const div = document.createElement("div");
+  div.textContent = "...";
+
+  return {
+    element: div,
+    renderComplete: Promise.all([delay(1000 * Math.random()), itemPromise]).then(([,item]) => {
+      div.textContent = item.data.text;
+    })
+  };
+};
+```
+
+[Live demo, including all supporting code](https://jsbin.com/habubas/edit?html,output)
 
 ### With declarative template stamping
 
@@ -65,7 +83,7 @@ window.itemList = new WinJS.Binding.List(items);
 </div>
 ```
 
-[Live demo, including all the incidental supporting code](https://jsbin.com/xofabemolo/edit?html,output)
+[Live demo, including all supporting code](https://jsbin.com/sovobeh/edit?html,output)
 
 ## Resulting DOM structure
 
@@ -97,7 +115,7 @@ window.itemList = new WinJS.Binding.List(items);
           ... repeats for 44 total items ...
           <div class="win-container win-container-even win-backdrop"></div>
           <div class="win-container win-container-odd win-backdrop"></div>
-          ... repeats for 256 total placeholders ...
+          ... repeats for 255 total placeholders ...
         </div>
       </div>
     </div>
@@ -112,12 +130,36 @@ window.itemList = new WinJS.Binding.List(items);
 
 ## Customization options
 
-## Miscellaneous takeaways
+`ListView` is an industrial-strength control. Without even diving into the API documentation, you can tell from the Microsoft-provided demos that there are a lot of axes of customization:
 
-- The idea of requiring the data source to be wrapped into a custom class is interesting and perhaps useful.
+- List vs. grid layout vs. cell spanning layout vs. custom layout.
+- Ability to create "groupings" of items within the list, with a header per grouping
+- Ability to select one or more items in the list
+- Headers and footers
+- A boolean switch to make the items drag-drop reorderable, which will reorder both the UI and the underlying data
+- A separate boolean switch to make the items draggable in general, e.g. to other parts of the UI; combines well with the previous one
+- A `footervisibilitychanged` event which provides an opportunity to know when to load more data
+- CSS classes, `win-container-even` and `win-container-odd`, which allow striping. (This seems unnecessary given that `:nth-of-type` would work fine?)
+
+Note that the control comes with a default height of `400px`; it does not try to automatically infer from the items.
+
+## API
+
+Going through the API documentation, here are some highlights not mentioned above:
+
+- **Events**: various item dragging events, an item being "invoked" (clicked), keyboard navigation, loading state changes, selection changes
+- **Methods**: `elementFromIndex()`, `indexOfElement()`, some stuff related to loading of pages (??), some stuff that should never need to be called for re-doing layout
+- **Properties**: `currentItem`; `groupDataSource` vs. `itemDataSource`; `indexOf{First|Last}Visible`, properties for controlling how many items to "load" (render) before/after the currently-visible ones
+
+## Miscellaneous thoughts and takeaways
+
+- The idea of requiring the data source to be wrapped into a custom class is interesting and perhaps useful. This avoids the diffing that many modern frameworks do.
 - The reliance on global variables to hook things up is very sad.
 - The way in which it modifies your markup, to insert classes, ARIA, `tabindex`, etc., is a little sad. We may be able to avoid some of this with shadow DOM?
-- I'm not sure what, if anything, they're doing to make the placeholder items be the right height.
+- They appear to dynamically create a CSS rule to set the placeholder items to be the same size as the other items. I haven't dug into the code to see what heuristic they use here (e.g., what happens if different items are different sizes).
+- It's heartening to see that both grid and list layouts appear to use the same DOM structure, with only CSS differences. Cell-spanning layout appears to use additional inline CSS to set `with`, `height`, and CSS grid properties.
+- It seems to use some concept of "page" to control loading behavior. I think this just means "how many items can fit on the screen".
+- The "item" abstraction, passed to the renderer function, is interesting; I can't find any API documentation for it, but it makes some sense. I don't quite understand why it's a promise, i.e. I don't understand in what scenario it might take some time to acquire the promise. But the framework for returning a custom placeholder then filling it in later seems nice.
 
 ## Resources
 
@@ -130,4 +172,5 @@ window.itemList = new WinJS.Binding.List(items);
   - [Function rendering](http://try.buildwinjs.com/tutorial/3Control_Manipulation/functionRend/) (i.e. imperative rendering) is the lower-level technology that underlies the template binding
 - Demos:
   - [The new playground](http://try.buildwinjs.com/playground/) has three relevant demos, each of which demonstrate different ways to customize the `ListView`
-  - [The former playground](http://winjs.azurewebsites.net/) has the same demos with different presentation.
+  - [The former playground](http://winjs.azurewebsites.net/) has the same demos with different presentation
+  - [This interactive demo](http://winjs.azurewebsites.net/pages/listview/options/default.html) lets you customize all the different options individually
