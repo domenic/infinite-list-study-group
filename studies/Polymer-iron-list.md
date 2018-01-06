@@ -185,7 +185,34 @@ list.items = [{name: 'Junior'}, ...list.items];  // Add to beginning of list
 
 However, in this case content may move on screen since the exact location of the change cannot be known without diffing the array (which is not currently implemented).
 
-### 
+## Coordination with other elements
+
+### `<iron-scroll-threshold>`
+
+`iron-list` has no built-in mechanisms for e.g. lazy-loading more data into the list, however it was designed to be used with [`<iron-scroll-threshold>`](https://www.webcomponents.org/element/PolymerElements/iron-scroll-threshold/elements/iron-scroll-threshold) to implement such a pattern.  Example:
+
+```html
+<iron-scroll-threshold id="threshold" lower-threshold="200">
+  <iron-list id="list" scroll-target="threshold">
+    <template>
+      <div>[[index]]</div>
+    </template>
+  </iron-list>
+</iron-scroll-threshold>
+
+<script>
+threshold.addEventListener('lower-threshold', async e => {
+  const resp = await fetch(`data.json?page=${currentPage++}`);
+  const data = await resp.json();
+  list.push('items', ...data);
+  threshold.clearTriggers();
+}
+</script>
+```
+
+### `<iron-image>`
+
+An issue that comes up with images in recycled lists is that simply changing an `<img>`'s `src` when recycling can lead to the stale image being shown until the network fetch for the image completes (despite the fact that other aspects of the rendering for the newly recycled item, e.g. `textContent` have changed, which can be extra confusing).  As such, it is recommended to use [`<iron-image>`](https://www.webcomponents.org/element/PolymerElements/iron-image/elements/iron-image) in `<iron-list>`, which has the feature of automatically blanking the image when the src is changed, with other options for e.g. showing a loading placeholder image until the image has loaded, fading the loaded image in, etc.
 
 ## Unimplemented Feature Requests
 [Github enhancements list](https://github.com/PolymerElements/iron-list/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement)
