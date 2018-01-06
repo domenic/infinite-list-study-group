@@ -3,7 +3,7 @@
 - Study Author: [@kschaaf](https://github.com/kschaaf)
 - Platform: web
 
-## Background
+## Background on Polymer & Web Components
 
 [Polymer](http://www.polymer-project.org/) is a Google project focused on developer experience for creating, vending, and building applications using [Web Components](https://www.webcomponents.org/introduction).
 
@@ -11,17 +11,15 @@ Web Components is an ubmrella term referring to a series of new browser API's th
 
 The Polymer team ships a library of the same name (effectively, a custom element base class) that layers a number of features onto the built-in Web Components primitives, such as property change observation, template-based declarative data-binding, and declarative event handlers.
 
+
+## Overview
+
 `<iron-list>` is a Web Component built using the Polymer library that implements a virtualized, "infinite-scrolling" list.  As its primary inputs it accepts an array of list data (via property) and a template (via light dom) containing the prototypical dom for each list item, including Polymer-specific data-bindings that determine how to propagate array item data to each template instance.  It then stamps enough template instances to fill the viewport, plus a sufficient "runway" of off-screen items to maintain the illusion of continuous items during scrolling.  At each scroll event, it uses a boundary-based heuristic to determine when to rotate off-screen items from one edge of the list to the other, and repositions one or more template instances via css transform.
 
 ## Essential sample code
 
 ```html
-<style>
-  #list { flex: 1; }
-  .item { /*...*/ }
-</style>
-
-<iron-list id="list" scroll-target="document">
+<iron-list id="list">
   <template>
     <div class="item">[[index]] - [[item.name]]</div>
   </template>
@@ -31,12 +29,6 @@ The Polymer team ships a library of the same name (effectively, a custom element
   list.items = [{name: 'Domenic'}, {name: 'Ojan'}, ...];
 </script>
 ```
-
-Live examples:
-* [minimal usage example](http://jsbin.com/qoletob/edit?html,output)
-* [x-ray example](http://jsbin.com/yesezed/edit?html,output)
-* [x-ray variable height](http://jsbin.com/tukulub/edit?html,output)
-* [all element demos](https://raw-dot-custom-elements.appspot.com/PolymerElements/iron-list/v2.0.12/iron-list/demo/index.html)
 
 ## Resulting DOM structure
 
@@ -61,10 +53,16 @@ Live examples:
 </iron-list>
 ```
 
+## Live examples:
+* [minimal usage example](http://jsbin.com/qoletob/edit?html,output)
+* [x-ray example](http://jsbin.com/yesezed/edit?html,output)
+* [x-ray variable height](http://jsbin.com/tukulub/edit?html,output)
+* [all element demos](https://raw-dot-custom-elements.appspot.com/PolymerElements/iron-list/v2.0.12/iron-list/demo/index.html)
+
 ## Customization options
 
 * `grid` (true/false) - toggles row vs. grid mode
-* `selectionEnabled` (true/false) - toggles selection on/off. When selected (via tap) items get `selected` class applied which can be styled, and places the item in a `selected` array
+* `selectionEnabled` (true/false) - toggles selection on/off. When selected (via tap), items get `selected` class applied which can be styled, and places the item in a `selected` array
 * `multiSelection` (true/false) - toggles multiple selection on/off
 * `scrollTarget` (element reference, id ref, or `'document'`) - by default the `<iron-list>` will be the scroll target, and must be sized; alternatively `<iron-list>` can be placed inside another scrolling region, in which case it is not the scroller and the `scrollTarget` must then specify the scroller element (to determine sizing, listen for `scroll` event, etc.)
 * `scrollOffset` (integer, pixels) -  offset from the scrolling element to the top of iron-list element
@@ -82,6 +80,7 @@ Live examples:
   * `set(path, value)`
   * `push(array, value)`
   * `splice(array, value)`
+  * ...
 * selection
   * `clearSelection()`
   * `selectIndex(index)`
@@ -133,6 +132,14 @@ A continuously updating average height of items rendered is maintained and used 
 
 The average is also used when scrolling to an arbitrary point in the list.  When scrolling to an arbitrary `scrollTop`, it is used to guess what array item would be at that spot. Likewise, when scrolling to an arbitrary array index, it is used to guess what the `scrollTop` should be set at.  The same process of updating the height of the container is used to trim the error back out of the list as the user approaches either end of the list (although since items are translated from the top, trimming error from the top of the list also requires updating the `scrollTop` and positioning of items).
 
+### Resize handling
+
+There are a couple of considerations that `iron-list` implements regarding resizing the list:
+
+First, when the list is resized, it attempts to maintain the same content visible on screen by adjusting the scroll position to keep the top-most visible item on the screen.  This may be questionable, but we felt it provided a much better UX than what normally happens when a traditional page full of content is resized (content either wraps more or less, causing the content in the visible viewport to change, which is a hair-pulling experience when e.g. rotating midway down a page on a phone).
+
+Second, to implement the above, but also to simply ensure that the physical items are actually positioned correctly in the viewport, the list needs to know when its size has changed.  It listens to `resize` on `window`, but this is not sufficient to handle all cases where the list is resized (e.g. lists sized based on draggable pane splitters, for instance).  In the future, `ResizeObserver` should solve this problem, but in the meantime and for cross-platform support, `iron-list` uses the [`iron-resizable-behavior`](https://www.webcomponents.org/element/PolymerElements/iron-resizable-behavior/behaviors/Polymer.IronResizableBehavior) mixin, which is an approach for having resizable parents notify children (such as `iron-list`) when their size has changed via a cooperative event-based API.
+
 ### Accessibility
 
 `iron-list` has some built-in handling for keyboard navigation of the list, such that only one item in the list is ever tab-focusable, and focus for items _within the list_ can then be navigated via arrow keys.  This list-managed focus handling can be opted into by binding `[[tabIndex]]` to the `tabindex` attribute of a list item.  Via this data-binding, the list ensures only one item is ever focusable (all others get `tabindex="-1"`), and moves the focus and sets `tabindex="0"` for the next/previous item via arrow keys.
@@ -143,9 +150,44 @@ There is also some careful handling to avoid the currently focused item from bei
 
 The declarative template-based data-binding approach central to `iron-list`'s update process when recycling is probably the most non-portable, Polymer-specific aspect of `iron-list`.  Since the template and the data-binding annotations form the complete mapping of data to dom, no user code is needed to either generate the list item instances (the template is stamped) nor update items with new data (new item data from the `items` array is simply fed into the template instance via the data binging system).  This gives good ergonomics in that the list can be constructed in a fully declarative manner, but is also constrained by the limits of the Polymer data binding system.
 
+The binding scope for each template instance is an object with the following structure:
+
+```js
+{
+  index: 0,        // index in the item array
+  selected: false, // true if the current item is selected
+  tabIndex: -1,    // a dynamically generated tabIndex for focus management
+  item: {}         // user data corresponding to items[index]
+}
+```
+
 It's important to note that `iron-list` does rely on Polymer 1.0/2.0's synchronous data binding system to provide well-known semantics for when DOM updates based on data changes have completed, since this is required to know when to measure item sizes and re-position them accordingly.  If the side effects of updating item data were async, a protocol would be needed to coordinate this process (e.g. a Promise-based API), which has implications for being able to render arbitrary DOM (including custom elements).
 
-### Unimplemented Community Feature Requests
+### API for updating data
+
+By virtue of extending from Polymer's base class, `iron-list` exposes Polymer's [structured data API](https://www.polymer-project.org/2.0/docs/devguide/data-system#make-observable-changes) for making changes to the `items` array or objects within the array in a way observable to the list, such that the rendering is automatically updated.  Examples:
+
+```js
+const list = document.querySelector('iron-list#mylist');
+list.push('items', {name: 'John'});            // Add to end of list
+list.splice('items', 0, 1, {name: 'Sally'});   // Replace first item in list
+list.set('items.3.name', 'Ben');               // Set items[3].name = 'Ben'
+```
+
+Using these API's provides enough informatino about the change that, when changes occur to data outside the viewport, the effective scroll position can be adjusted to avoid unpleasent sudden changes to the content visible to the user.  Also, when using `iron-list` within a larger app that is fully composed from templates using Polymer's data-bindings, information about changes made via these API's to the array data in one part of the application are communicated to the list as a special-case of polymer's normal property-based data-binding.
+
+Alternatively, users can use immutable data patterns to update list data, which is typical among unidirectional state management such as when using e.g. Redux. Example:
+
+```js
+const list = document.querySelector('iron-list#mylist');
+list.items = [{name: 'Junior'}, ...list.items];  // Add to beginning of list
+```
+
+However, in this case content may move on screen since the exact location of the change cannot be known without diffing the array (which is not currently implemented).
+
+### 
+
+## Unimplemented Feature Requests
 [Github enhancements list](https://github.com/PolymerElements/iron-list/issues?q=is%3Aopen+is%3Aissue+label%3Aenhancement)
 
 * grouping/sections/dividers/headers
