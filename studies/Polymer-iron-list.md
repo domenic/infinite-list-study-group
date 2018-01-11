@@ -14,7 +14,13 @@ The Polymer team ships a library of the same name (effectively, a custom element
 
 ## Overview
 
-`<iron-list>` is a Web Component built using the Polymer library that implements a virtualized, "infinite-scrolling" list.  As its primary inputs it accepts an array of list data (via property) and a template (via light dom) containing the prototypical dom for each list item, including Polymer-specific data-bindings that determine how to propagate array item data to each template instance.  It then stamps enough template instances to fill the viewport, plus a sufficient "runway" of off-screen items to maintain the illusion of continuous items during scrolling.  At each scroll event, it uses a boundary-based heuristic to determine when to rotate off-screen items from one edge of the list to the other, and repositions one or more template instances via css transform.
+`<iron-list>` is a Web Component built using the Polymer library that implements a virtualized, "infinite-scrolling" list.  As its primary inputs it accepts an array of list data (via property) and a template (via light dom) containing the prototypical dom for each list item, including Polymer-specific data-bindings that determine how to propagate array item data to each template instance.  It then stamps enough template instances to fill the viewport, plus a sufficient "runway" of off-screen items to maintain the illusion of continuous items during scrolling.  At each scroll event, it uses a boundary-based heuristic to determine when to rotate off-screen items from one edge of the list to the other, repositions one or more template instances via css transform, and updates the data-bindings in the template instance with a new item from the array.
+
+The design is optimized for the following assumptions/biases:
+* Bounding the total number of DOM nodes ever made by the list is important to avoid memory pressure
+* The cost of showing new items during scroll (via any strategy) directly affects the risk of checkerboarding
+* Updating existing DOM with new data (recycling) is cheaper than making new DOM and then updating it with data
+* Support for variable height items is important to solve a number of use cases in the most flexible way (grouping, heterogenus content, etc.)
 
 ## Essential sample code
 
