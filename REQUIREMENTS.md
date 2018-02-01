@@ -5,7 +5,7 @@ or would like to add additional use cases/features, please file an issue or subm
 # Use Cases
 - News feeds
 - Product listings
-- Incremental rendering (i.e. each paragraph on your page is an element. Items are rendered as the user scrolls)
+- Incremental rendering (i.e. each paragraph on your page is an element with items rendered as the user scrolls)
 
 We plan to address all use cases with the MVP, though news feeds and product listings are higher priority.
 
@@ -16,7 +16,7 @@ never be included.
 
 ## P0
 - Accurate scrollbar position for elements that have been loaded
-- Discoverable by screen readers for elements that have been loaded
+- Overall list structure supports screen readers and accessibility controls
 - Heterogeneous elements
 - Fallback element UI
 - Grid layout
@@ -29,6 +29,7 @@ never be included.
 - Sub groups within the list (i.e. letter groupings for a contact list)
 - Maintain scroll position across page load
 - "Load more" button
+- Elements within the list are automatically made accessible (rather than relying on the author)
 
 ## P2
 - Backed by remote data source
@@ -39,3 +40,12 @@ never be included.
 - Pull to refresh
 - Discoverable by screen readers for elements in the list that haven't been loaded
 - Horizontal scrolling
+
+# Open Questions
+## Declarative vs. imperative
+Should the infinite list support fully declarative specification? At the very least, retrieving the list data to display seems like it will require some amount of script, unless we want to require that the entirety of the list data is loaded ahead of time. This seems counter to the performance goals of an incrementally rendered, infinite list though.
+
+The question remains, though, whether authors should be able to define the structure and views entirely declaratively, only having to provide a data element imperatively.
+
+## Animations
+Some infinite lists (such as UITableView) include primitives for coordinating animations of individual elements with the rest of the list layout.
