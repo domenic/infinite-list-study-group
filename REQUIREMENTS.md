@@ -30,6 +30,7 @@ never be included.
 - Maintain scroll position across page load
 - "Load more" button
 - Elements within the list are automatically made accessible (rather than relying on the author)
+- Ability to animate items in/out, changing sizes
 
 ## P2
 - Backed by remote data source
